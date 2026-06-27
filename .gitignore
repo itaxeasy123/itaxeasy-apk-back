@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual env (poetry in-project)
+.venv/
+
+# Environment / secrets
+.env
+firebase-service-account.json
+firebase-prod-service-account.json
+*service-account*.json
+*serviceAccount*.json
+
+# OS
+.DS_Store
