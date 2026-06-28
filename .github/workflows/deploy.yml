@@ -1,0 +1,51 @@
+name: Deploy APK backend to server
+
+# Push to main -> SSH into the production server and roll out the FastAPI APK backend.
+# Manual re-runs are available via the "Run workflow" button (workflow_dispatch).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys run at once; queue them instead of racing.
+concurrency:
+  group: deploy-apk-backend-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -euo pipefail
+            # Poetry installs to ~/.local/bin; non-interactive shells don't have it on PATH.
+            export PATH="$HOME/.local/bin:$PATH"
+
+            APP_DIR="$HOME/itaxeasy-apk-back"
+            REPO="git@github.com:itaxeasy123/itaxeasy-apk-back.git"
+
+            # First run bootstraps the checkout; later runs fast-forward it.
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "First run: cloning $REPO"
+              git clone --branch main "$REPO" "$APP_DIR"
+            fi
+            cd "$APP_DIR"
+            # Ensure the remote uses SSH so non-interactive fetch works (no creds prompt).
+            git remote set-url origin "$REPO"
+            git fetch --prune origin
+            # Remember the currently-deployed commit so deploy.sh can roll back to it.
+            PREV_DEPLOY_REF="$(git rev-parse HEAD)"
+            export PREV_DEPLOY_REF
+            git checkout main
+            git reset --hard origin/main
+
+            bash scripts/deploy.sh

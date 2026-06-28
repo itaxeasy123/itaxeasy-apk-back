@@ -42,7 +42,7 @@ itaxeasy-apk-backend/
 
 ## ⚡ Quick Start
 
-You can spin up the local development database, run the async schema migrations, and launch the hot-reloading FastAPI application on port `8002` with a single command!
+You can spin up the local development database, run the async schema migrations, and launch the hot-reloading FastAPI application on port `54110` with a single command!
 
 ### 1. Launch Dev Environment
 Run the start automation script from the project root:
@@ -52,8 +52,8 @@ Run the start automation script from the project root:
 
 ### 2. View Swagger API Docs
 Once started, go to your browser and access:
-* **Swagger UI Docs:** [http://localhost:8002/docs](http://localhost:8002/docs)
-* **ReDoc Docs:** [http://localhost:8002/redoc](http://localhost:8002/redoc)
+* **Swagger UI Docs:** [http://localhost:54110/docs](http://localhost:54110/docs)
+* **ReDoc Docs:** [http://localhost:54110/redoc](http://localhost:54110/redoc)
 
 ### 3. Stop Environment
 To stop the database and Redis services:
