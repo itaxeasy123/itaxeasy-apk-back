@@ -12,6 +12,7 @@ from app.api.auth.schemas import (
 from app.api.auth.service import AuthService
 from app.api.deps import get_current_user
 from app.core import msg91
+from app.core.config import settings
 from app.core.database import get_db
 from app.models import User
 
@@ -28,6 +29,9 @@ def _client_ip(request: Request) -> str | None:
 @router.post("/otp/send", status_code=status.HTTP_200_OK)
 async def otp_send(payload: OtpSendRequest):
     """Have MSG91 generate and SMS an OTP to the given phone number."""
+    # Test bypass: don't hit MSG91, the fixed TEST_OTP_CODE will be accepted.
+    if settings.is_test_phone(payload.phone):
+        return {"success": True, "message": "Test OTP active (no SMS sent)."}
     try:
         await msg91.send_otp(payload.phone)
     except msg91.Msg91Error as exc:
@@ -62,7 +66,16 @@ async def otp_verify(
     or log in the user and return our own access + refresh tokens.
     """
     verified_phone = None
-    if payload.accessToken:
+    # Test bypass: a configured test phone + the fixed TEST_OTP_CODE logs in
+    # without contacting MSG91 (used when DLT/SMS isn't available).
+    if payload.phone and payload.otp and settings.is_test_phone(payload.phone):
+        if payload.otp != settings.TEST_OTP_CODE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not verify. Please request a new OTP.",
+            )
+        verified_phone = payload.phone
+    elif payload.accessToken:
         try:
             verified_phone = await msg91.verify_widget_token(payload.accessToken)
         except msg91.Msg91Error as exc:

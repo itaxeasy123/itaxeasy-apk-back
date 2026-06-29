@@ -24,6 +24,31 @@ class Settings(BaseSettings):
     MSG91_OTP_LENGTH: int = 6
     MSG91_BASE_URL: str = "https://control.msg91.com/api/v5"
 
+    # ----------------------------- Test OTP bypass ---------------------------- #
+    # For testing without sending a real SMS (e.g. when DLT isn't set up). When
+    # enabled, listed phones skip MSG91 entirely: /otp/send is a no-op and
+    # /otp/verify accepts TEST_OTP_CODE. NEVER enable in production.
+    TEST_OTP_ENABLED: bool = False
+    TEST_OTP_CODE: str = "123456"
+    # Comma-separated phones (E.164 "+919636286581" or bare "9636286581").
+    TEST_PHONES: str = ""
+
+    @property
+    def test_phones_normalized(self) -> set[str]:
+        """Test phones reduced to their last 10 digits for robust matching."""
+        out: set[str] = set()
+        for raw in self.TEST_PHONES.split(","):
+            digits = "".join(c for c in raw if c.isdigit())
+            if len(digits) >= 10:
+                out.add(digits[-10:])
+        return out
+
+    def is_test_phone(self, phone: str) -> bool:
+        if not self.TEST_OTP_ENABLED:
+            return False
+        digits = "".join(c for c in (phone or "") if c.isdigit())
+        return len(digits) >= 10 and digits[-10:] in self.test_phones_normalized
+
     @property
     def is_local(self) -> bool:
         return self.ENVIRONMENT == "local"
