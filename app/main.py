@@ -1,27 +1,14 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.core.firebase import init_firebase
 from app.api.auth.router import router as auth_router
 from app.api.business.router import router as business_router
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Initialize the Firebase Admin SDK once at startup (used to verify the
-    # phone-OTP ID tokens the app sends). Missing credentials only logs a
-    # warning so the app still boots during early setup.
-    init_firebase()
-    yield
 
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Python FastAPI backend built for the iTaxEasy Mobile APK (Phase 1)",
     version="0.1.0",
-    lifespan=lifespan,
 )
 
 # Configure CORS

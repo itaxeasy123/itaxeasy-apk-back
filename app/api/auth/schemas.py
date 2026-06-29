@@ -24,16 +24,22 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-class FirebaseAuthRequest(BaseModel):
-    """
-    Sent by the app after the Firebase Phone Auth SDK has verified the OTP.
+class OtpSendRequest(BaseModel):
+    """Ask the backend to have MSG91 send an OTP to this phone."""
 
-    `idToken` is the Firebase ID token (the backend verifies it). `fullName`/
-    `email` are only used the FIRST time (registration); on subsequent logins
-    they are ignored and the stored profile is returned.
+    phone: str = Field(..., description="Indian mobile (E.164 +91… or 10 digits)")
+
+
+class OtpVerifyRequest(BaseModel):
+    """
+    Verify the OTP the user typed, or the MSG91 SendOTP Widget access token.
+    On success, the backend registers (first time, `fullName` required) or
+    logs the user in.
     """
 
-    idToken: str = Field(..., description="Firebase ID token from the device SDK")
+    phone: Optional[str] = Field(default=None, description="Same phone the OTP was sent to")
+    otp: Optional[str] = Field(default=None, min_length=4, max_length=8, description="Code from SMS")
+    accessToken: Optional[str] = Field(default=None, description="JWT access token from MSG91 SendOTP Widget")
     fullName: Optional[str] = Field(
         default=None, min_length=3, description="Required on first-time registration"
     )

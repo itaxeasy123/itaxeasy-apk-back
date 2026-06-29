@@ -9,7 +9,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.firebase import verify_id_token
 from app.models import OtpLog, User, UserSession
 
 
@@ -78,59 +77,33 @@ class AuthService:
         return result.scalars().first()
 
     @classmethod
-    async def get_user_by_firebase_uid(
-        cls, db: AsyncSession, uid: str
-    ) -> Optional[User]:
-        result = await db.execute(select(User).where(User.firebaseUid == uid))
-        return result.scalars().first()
-
-    @classmethod
     async def get_user_by_phone(cls, db: AsyncSession, phone: str) -> Optional[User]:
         result = await db.execute(select(User).where(User.phone == phone))
         return result.scalars().first()
 
     # ------------------------------------------------------------------ #
-    # Firebase login / registration (SRS Module 1: Send/Verify OTP)      #
+    # Phone OTP login / registration (SRS Module 1: Send/Verify OTP)      #
     # ------------------------------------------------------------------ #
     @classmethod
-    async def authenticate_with_firebase(
+    async def authenticate_with_phone(
         cls,
         db: AsyncSession,
-        id_token: str,
+        phone: str,
         full_name: Optional[str],
         email: Optional[str],
         device_info: Optional[str],
         ip_address: Optional[str],
     ) -> Tuple[User, str, str, bool]:
         """
-        Verify the Firebase ID token (proof the phone OTP succeeded), then either
-        log the existing user in or register a new one.
+        Register-or-login a user whose phone OTP has just been verified by MSG91.
+
+        The caller (router) must have already confirmed the OTP with MSG91 before
+        invoking this — reaching here means the phone number is trusted.
 
         Returns (user, access_token, raw_refresh_token, is_new_user).
         """
-        try:
-            identity = verify_id_token(id_token)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)
-            )
-
-        if not identity.phone_number:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Firebase token has no phone number. Sign in with phone OTP.",
-            )
-
-        phone = identity.phone_number
         is_new_user = False
-
-        # Match on Firebase UID first, then fall back to phone (covers a user who
-        # existed before but signs in from a freshly reinstalled app).
-        user = await cls.get_user_by_firebase_uid(db, identity.uid)
-        if user is None:
-            user = await cls.get_user_by_phone(db, phone)
-            if user is not None and not user.firebaseUid:
-                user.firebaseUid = identity.uid
+        user = await cls.get_user_by_phone(db, phone)
 
         if user is None:
             # First-time registration — full name is required (SRS: min 3 chars)
@@ -140,9 +113,8 @@ class AuthService:
                     detail="Full name (min 3 characters) is required to register.",
                 )
             user = User(
-                firebaseUid=identity.uid,
                 phone=phone,
-                email=email or identity.email,
+                email=email,
                 fullName=full_name.strip(),
                 verified=True,
             )
@@ -155,7 +127,6 @@ class AuthService:
             OtpLog(
                 userId=user.id,
                 phone=phone,
-                firebaseUid=identity.uid,
                 ipAddress=ip_address,
                 purpose="register" if is_new_user else "login",
             )

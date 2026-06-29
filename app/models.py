@@ -40,9 +40,8 @@ class User(Base):
     """
     Phase-1 user (SRS Module 1 & 2).
 
-    Authentication is phone + Firebase OTP only — there is no password column.
-    The phone number is established and trusted via the Firebase ID token; the
-    Firebase UID is stored so the same device/account maps back to one user.
+    Authentication is phone + MSG91 OTP only — there is no password column. The
+    phone number is established and trusted when MSG91 verifies the OTP.
     """
 
     __tablename__ = "users"
@@ -53,8 +52,8 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    # Firebase identity (set on first successful OTP verification)
-    firebaseUid = Column(String, unique=True, nullable=False, index=True)
+    # Legacy Firebase identity — kept nullable for older accounts; no longer set.
+    firebaseUid = Column(String, unique=True, nullable=True, index=True)
 
     # SRS Module 1 / 2 fields
     phone = Column(String, nullable=False, unique=True)  # Mobile number (Mandatory)
@@ -114,9 +113,8 @@ class OtpLog(Base):
     """
     SRS-required `otp_logs`, repurposed as an AUDIT trail.
 
-    Since the OTP itself is generated, sent and verified by Firebase (free,
-    on-device), we don't store OTP codes. We record each successful Firebase
-    verification for traceability/compliance.
+    Since the OTP itself is generated, sent and verified by MSG91, we don't store
+    OTP codes. We record each successful verification for traceability/compliance.
     """
 
     __tablename__ = "otp_logs"
@@ -127,7 +125,7 @@ class OtpLog(Base):
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
     )
     phone = Column(String, nullable=False)
-    firebaseUid = Column(String, nullable=False)
+    firebaseUid = Column(String, nullable=True)  # legacy; unused with MSG91
     ipAddress = Column(String, nullable=True)
     purpose = Column(String, nullable=False, server_default="login")  # login | register
 
