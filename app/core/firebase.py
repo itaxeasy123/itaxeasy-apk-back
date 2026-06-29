@@ -80,12 +80,17 @@ def verify_id_token(id_token: str) -> FirebaseIdentity:
 
     try:
         decoded = firebase_auth.verify_id_token(id_token, app=app)
-    except firebase_auth.ExpiredIdTokenError:
+    except firebase_auth.ExpiredIdTokenError as e:
+        print(f"[firebase] Token verification failed: ExpiredToken - {e}")
         raise ValueError("Firebase token has expired. Please sign in again.")
-    except firebase_auth.RevokedIdTokenError:
+    except firebase_auth.RevokedIdTokenError as e:
+        print(f"[firebase] Token verification failed: RevokedToken - {e}")
         raise ValueError("Firebase token has been revoked. Please sign in again.")
-    except (firebase_auth.InvalidIdTokenError, ValueError):
-        raise ValueError("Invalid Firebase token.")
+    except Exception as e:
+        import traceback
+        print(f"[firebase] Token verification failed with exception: {type(e).__name__} - {e}")
+        traceback.print_exc()
+        raise ValueError(f"Invalid Firebase token: {e}")
 
     uid = decoded.get("uid")
     if not uid:
