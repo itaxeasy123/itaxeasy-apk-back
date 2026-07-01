@@ -84,6 +84,9 @@ class BusinessService:
             pan=data.pan,
             gstin=data.gstin,
             stateCode=data.stateCode,
+            address=data.address,
+            city=data.city,
+            pincode=data.pincode,
             country=data.country or "India",
             currency=data.currency or "INR",
             fyStartMonth=data.fyStartMonth or 4,
@@ -134,6 +137,7 @@ class BusinessService:
 
         for field in (
             "name", "tradeName", "pan", "gstin", "stateCode",
+            "address", "city", "pincode",
             "country", "currency", "fyStartMonth", "status",
         ):
             value = getattr(data, field)

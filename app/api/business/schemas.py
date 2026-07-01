@@ -48,6 +48,9 @@ class BusinessResponse(BaseModel):
     pan: Optional[str] = None
     gstin: Optional[str] = None
     stateCode: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
     country: str
     currency: str
     fyStartMonth: int
@@ -65,6 +68,9 @@ class BusinessCreateRequest(BaseModel):
     pan: Optional[str] = None
     gstin: Optional[str] = None
     stateCode: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
     country: str = "India"
     currency: str = "INR"
     fyStartMonth: int = Field(default=4, ge=1, le=12)
@@ -78,6 +84,9 @@ class BusinessUpdateRequest(BaseModel):
     pan: Optional[str] = None
     gstin: Optional[str] = None
     stateCode: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    pincode: Optional[str] = None
     country: Optional[str] = None
     currency: Optional[str] = None
     fyStartMonth: Optional[int] = Field(default=None, ge=1, le=12)

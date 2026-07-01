@@ -162,6 +162,9 @@ class Business(Base):
     pan = Column(String, nullable=True)  # required when status=active (validated in schema)
     gstin = Column(String, nullable=True)  # GSTIN (optional)
     stateCode = Column(String, nullable=True)  # State (required when active)
+    address = Column(String, nullable=True)  # Street / building address (optional)
+    city = Column(String, nullable=True)  # City / town (optional)
+    pincode = Column(String, nullable=True)  # Postal PIN code (optional)
     country = Column(String, nullable=False, server_default="India")
     currency = Column(String, nullable=False, server_default="INR")
     fyStartMonth = Column(Integer, nullable=False, server_default="4")  # 4 = April
